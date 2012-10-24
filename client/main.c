@@ -21,7 +21,12 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    SendMessage(stdin, sock, (SA *) &addr, sizeof(addr));
+
+    SendReciveMessage(stdin, sock, (SA *) &addr, sizeof(addr));
+/*
+    dg_cli(stdin, sock, (SA *) &addr, sizeof(addr));
+*/
+    
     CloseConnection(sock);
     return 0;
 }
