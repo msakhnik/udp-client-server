@@ -9,25 +9,22 @@
 #include <stdlib.h>
 #include "client.h"
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
     char msg1[] = "Hello there!\n";
     char msg2[] = "Bye bye!\n";
     int sock;
     struct sockaddr_in addr;
 
-    sock = CreateConnection((SAI *) &addr, sizeof(addr));
+    sock = CreateConnection((SAI *) & addr, sizeof (addr));
     if (sock == -1)
     {
         return -1;
     }
 
 
-    SendReciveMessage(stdin, sock, (SA *) &addr, sizeof(addr));
-/*
-    dg_cli(stdin, sock, (SA *) &addr, sizeof(addr));
-*/
-    
+    SendMessage(stdin, sock, (SA *) & addr, sizeof (addr));
+
     CloseConnection(sock);
     return 0;
 }
-

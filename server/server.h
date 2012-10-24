@@ -5,7 +5,7 @@
 extern "C"
 {
 #endif
-    
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,7 +18,7 @@ extern "C"
 #define	SA struct sockaddr
 #define	SAI struct sockaddr_in
 #define	MAXLINE 1024
-    
+
 int CreateConnection(SAI *, size_t);
 void ReciveData(int);
 void CloseConnection(int);
@@ -29,4 +29,3 @@ void RunEcho(int sock, SA *, size_t);
 #endif
 
 #endif	/* SERVER_H */
-

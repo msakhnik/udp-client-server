@@ -13,25 +13,25 @@
 /*
  * 
  */
-int main(int argc, char** argv) {
-    
+int main(int argc, char** argv)
+{
+
     int sock;
     struct sockaddr_in addr, cliaddr;
 
-    sock = CreateConnection((SAI *) &addr, sizeof(addr));
+    sock = CreateConnection((SAI *) & addr, sizeof (addr));
     if (sock == -1)
     {
         return -1;
     }
 
-/*
-    ReciveData(sock);
-*/
+    /*
+        ReciveData(sock);
+     */
 
-    RunEcho(sock, (SA *) &cliaddr, sizeof(cliaddr));
+    RunEcho(sock, (SA *) & cliaddr, sizeof (cliaddr));
 
     CloseConnection(sock);
 
     return 0;
 }
-

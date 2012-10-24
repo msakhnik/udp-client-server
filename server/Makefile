@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-g
+CFLAGS=-g -lpcap
 DEPS = server.h
 NAME = server
 OBJ = server.o main.o 
