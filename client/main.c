@@ -15,15 +15,14 @@ int main(int argc, char** argv) {
     int sock;
     struct sockaddr_in addr;
 
-    sock = CreateConnection((SA *) &addr, sizeof(addr));
+    sock = CreateConnection((SAI *) &addr, sizeof(addr));
     if (sock == -1)
     {
         return -1;
     }
 
-    SendMessage(&addr, sock, msg1, sizeof(msg1));
+    SendMessage(stdin, sock, (SA *) &addr, sizeof(addr));
     CloseConnection(sock);
-
     return 0;
 }
 

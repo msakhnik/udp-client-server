@@ -1,6 +1,6 @@
 #include "client.h"
 
-int CreateConnection(SA* ptr_addr, int size)
+int CreateConnection(SAI* ptr_addr, int size)
 {
     int sock = 0;
     sock = socket(AF_INET, SOCK_DGRAM, 0);
@@ -10,7 +10,7 @@ int CreateConnection(SA* ptr_addr, int size)
         return -1;
     }
     ptr_addr->sin_family = AF_INET;
-    ptr_addr->sin_port = htons(3425);
+    ptr_addr->sin_port = htons(7);
     ptr_addr->sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
     if (connect(sock, (struct sockaddr *)ptr_addr, size) < 0)
@@ -22,9 +22,18 @@ int CreateConnection(SA* ptr_addr, int size)
     return sock;
 }
 
-void SendMessage(SA* ptr_addr, int sock, char * msg, int size)
+void SendMessage(FILE * fp, int sock, const SA * pservaddr, size_t size)
 {
-    send(sock, msg, size, 0);
+    int n;
+    char sendline[MAXLINE], recvline[MAXLINE + 1];
+    while (fgets(sendline, MAXLINE, fp) != NULL)
+    {
+        sendto(sock, sendline, strlen(sendline), 0, pservaddr, size);
+        n = recvfrom(sock, recvline, MAXLINE, 0, NULL, NULL);
+        recvline[n] = 0;
+        printf("+%d+\n", n);
+        fputs(recvline, stdout);
+    }
 }
 
 void CloseConnection(int sock)

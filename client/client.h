@@ -5,7 +5,7 @@
 extern "C"
 {
 #endif
-
+    
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,12 +15,13 @@ extern "C"
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#define	SA struct sockaddr_in
+#define	SA struct sockaddr
+#define	SAI struct sockaddr_in
+#define	MAXLINE 1024
     
-int CreateConnection(struct sockaddr_in *, int);
-void SendMessage(SA* ptr_addr, int, char *, int);
+int CreateConnection(SAI*, int);
+void SendMessage(FILE *, int, const SA *, size_t);
 void CloseConnection(int);
-
 #ifdef	__cplusplus
 }
 #endif

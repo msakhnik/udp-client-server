@@ -15,11 +15,14 @@ extern "C"
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#define	SA struct sockaddr_in
+#define	SA struct sockaddr
+#define	SAI struct sockaddr_in
+#define	MAXLINE 1024
     
-int CreateConnection(struct sockaddr_in *, int);
+int CreateConnection(SAI *, size_t);
 void ReciveData(int);
 void CloseConnection(int);
+void RunEcho(int sock, SA *, size_t);
 
 #ifdef	__cplusplus
 }

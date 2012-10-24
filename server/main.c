@@ -16,15 +16,19 @@
 int main(int argc, char** argv) {
     
     int sock;
-    struct sockaddr_in addr;
+    struct sockaddr_in addr, cliaddr;
 
-    sock = CreateConnection((SA *) &addr, sizeof(addr));
+    sock = CreateConnection((SAI *) &addr, sizeof(addr));
     if (sock == -1)
     {
         return -1;
     }
 
+/*
     ReciveData(sock);
+*/
+
+    RunEcho(sock, (SA *) &cliaddr, sizeof(cliaddr));
 
     CloseConnection(sock);
 
