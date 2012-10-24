@@ -5,3 +5,4 @@ server/nbproject/
 server/build/
 server/dist/
 client/.dep.inc
+server/.dep.inc
