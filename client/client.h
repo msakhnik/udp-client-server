@@ -23,7 +23,18 @@ extern "C"
 #define	MAXLINE 1024
 
 int CreateConnection(SAI*, int);
-void SendMessage(FILE *, int, SA *, size_t);
+//Get server name and init remote server structure
+void GetServerHost(SAI *, int, char**);
+
+//Wait for answer from server
+int _IsReadable(int, int *, int);
+
+//Main function - parse array and send through _SendTo function
+void SendMessage(int, SA *, size_t, int, char**);
+
+//Send message
+void _SendTo(int, char*,SA *, size_t, int);
+
 void CloseConnection(int);
 
 #ifdef	__cplusplus
