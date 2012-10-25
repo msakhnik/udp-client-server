@@ -19,10 +19,22 @@ extern "C"
 #define	SAI struct sockaddr_in
 #define	MAXLINE 1024
 
+//structures for sending and reciving massages
+static struct msghdr msgrecv, msgsend;
+
+static struct hdr
+{
+    uint32_t seq;
+    uint32_t ts;
+} recvhdr, sendhdr;
+
+struct iovec iovrecv[2], iovsend[2];
+//end
 int CreateConnection(SAI *, size_t);
 void ReciveData(int);
 void CloseConnection(int);
 void RunEcho(int sock, SA *, size_t);
+void _InitMsgRecv(char * message);
 
 #ifdef	__cplusplus
 }
