@@ -1,8 +1,8 @@
 CC=gcc
 CFLAGS=-g
-DEPS = client.h unprtt
+DEPS = client.h
 NAME = client
-OBJ = client.o rtt.o main.o 
+OBJ = client.o main.o 
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
