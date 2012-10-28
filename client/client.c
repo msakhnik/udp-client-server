@@ -1,27 +1,19 @@
 #include "client.h"
+#include "lib/udpOverTcp.h"
 
 int CreateConnection(SAI* ptr_addr, int size)
 {
+    /* establish connection with server */
     int sock = 0;
-
-    sock = socket(AF_INET, SOCK_DGRAM, 0);
+    sock = UOTconnect(sock, (struct sockaddr *) ptr_addr, size);
     if (sock < 0)
     {
-        perror("Cannot open socket");
+        close(sock);
+        perror("error connecting stream socket");
         exit(1);
     }
-    ptr_addr->sin_family = AF_INET;
-    ptr_addr->sin_addr.s_addr = htonl(INADDR_ANY);
-    ptr_addr->sin_port = htons(0);
+    printf("Connection established\n");
 
-    int rc = 0;
-
-    rc = bind(sock, (SA *) ptr_addr, size);
-    if (rc < 0)
-    {
-        perror("Cannot bind port");
-        exit(1);
-    }
     return sock;
 }
 
@@ -47,7 +39,9 @@ void GetServerHost(SAI *addr, int size, char** data)
     addr->sin_family = h->h_addrtype;
     memcpy((char *) &addr->sin_addr.s_addr,
            h->h_addr_list[0], h->h_length);
-    addr->sin_port = htons(1500);
+    /*
+        addr->sin_port = htons(1500);
+     */
 }
 
 int _IsReadable(int sd, int * error, int timeOut)
@@ -76,7 +70,7 @@ int _IsReadable(int sd, int * error, int timeOut)
 }
 
 void _SendTo(int sock, char* line,
-                        SA * remoteServer, size_t size,int position)
+             SA * remoteServer, size_t size, int position)
 {
     int rc = 0;
     rc = sendto(sock, line, strlen(line) + 1, 0,
@@ -91,7 +85,7 @@ void _SendTo(int sock, char* line,
 }
 
 void SendMessage(int sock, SA * remoteServer,
-                                  size_t size_serv, int argc, char** argv)
+                 size_t size_serv, int argc, char** argv)
 {
     int n = 0;
     SAI echoAddr;
@@ -99,25 +93,32 @@ void SendMessage(int sock, SA * remoteServer,
     int i = 0;
     for (i = 2; i < argc; i++)
     {
-        _SendTo(sock, argv[i], remoteServer, size_serv, i - 1);
-        
+        UOTsend(sock, argv[i], sizeof (argv[i]), 0);
+
         memset(mesg, 0x0, MAXLINE);
         //this const value - max time for waiting answer from server
         int timeOut = 1000; // ms
         int error = 0;
-        while (!_IsReadable(sock, &error, timeOut))
-            _SendTo(sock, argv[i], remoteServer, size_serv, i - 1);
+        /*
+                while (!_IsReadable(sock, &error, timeOut))
+         */
+        fprintf(stdout, "This%d\n", sock);
+        UOTsend(sock, argv[i], sizeof (argv[i]), 0);
         printf("\n");
         int echoLen = sizeof (echoAddr);
-        n = recvfrom(sock, mesg, MAXLINE, 0,
-                     (SA *) &echoAddr, &echoLen);
+        perror("before ret'");
+        n = UOTrecv(sock, mesg, MAXLINE, 0);
+        /*
+                n = recvfrom(sock, mesg, MAXLINE, 0,
+                             (SA *) &echoAddr, &echoLen);
+         */
         if (n < 0)
         {
             perror("Cannot receive data");
             continue;
         }
         printf("Echo from %s:UDP%u : %s \n", inet_ntoa(echoAddr.sin_addr),
-                   ntohs(echoAddr.sin_port), mesg);
+               ntohs(echoAddr.sin_port), mesg);
     }
 }
 
