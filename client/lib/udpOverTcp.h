@@ -13,50 +13,17 @@ extern "C"
 {
 #endif
 
-#define TCP_seq unsigned int
-
-#define TCP_HEADER_SIZE (sizeof(TCP_header))
-#define TCP_MSS 1000
-#define TCP_SEGMENT_SIZE (sizeof(TCP_segment))
-
-#define LOCAL_SEGMENT 1
-#define REMOTE_SEGMENT 2
-#define TIMER_SEGMENT 3
-#define DEST_INFO 1
-#define SRC_INFO 2
-
-#define TROLL_PORT 15000
-#define TCPD_PORT 29000
-    
+#define PORT 3425  
 #define HOSTNAME "localhost"
     
-typedef struct{
-  u_short sport;
-  u_short dport;
-  TCP_seq seq;
-  TCP_seq ack;
-  u_short off_res_flags;
-  u_short win;
-  u_short sum;
-  u_short urp;
+static struct msghdr msgsend;
 
-}TCP_header;
+static struct hdr
+{
+    uint32_t seq;
+    uint32_t ts;
+} sendhdr;
     
-/* TCP Segment structure */
-typedef struct{
-  TCP_header  hdr;
-  char        data[TCP_MSS];
-}TCP_segment;
-
-/* TCP Buffer Node */
-struct _TCPBUF_ {
-  TCP_segment ts;
-  int len;
-  int txCount;
-  double lastTxTime;
-  struct _TCPBUF_* next;
-};
-
 int UOTsocket();
 int UOTbind (int sockfd, struct sockaddr *my_addr, int addrlen);
 int UOTaccept (int sockfd, struct sockaddr *addr, socklen_t *addrlen);

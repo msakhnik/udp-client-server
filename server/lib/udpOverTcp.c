@@ -21,149 +21,49 @@ int UOTsocket()
 
 int UOTconnect(int sockfd, struct sockaddr *serv_addr, int addrlen)
 {
-    int ret = 0;
-    int sock = 0;
-    char hostname[128];
-    TCP_segment ts;
-    struct sockaddr_in tcpd;
-    struct hostent* hp;
-    /* Store destination address */
-/*
-    fprintf(stdout, "\n%d\n", serv_addr->sa_family);
-*/
-    dest.sin_family = serv_addr->sa_family;
-    memcpy((void*) &(dest.sin_port), (const void*) &(serv_addr->sa_data), addrlen);
-    dest.sin_port = ntohs(dest.sin_port);
-    bzero((void*) &ts, TCP_SEGMENT_SIZE);
-    memcpy((void*) &ts.data, (void*) &dest, sizeof (dest));
-    ts.hdr.seq = DEST_INFO;
-    ts.hdr.urp = LOCAL_SEGMENT;
-    printf("LS = %d\n", ts.hdr.urp);
-    tcpd.sin_family = AF_INET;
-    tcpd.sin_port = TCPD_PORT;
 
-    gethostname(hostname, sizeof (hostname));
-    hp = gethostbyname(hostname);
-    bcopy((void *) hp->h_addr_list[0], (void *) &tcpd.sin_addr, hp->h_length);
-
-    sock = socket(AF_INET, SOCK_DGRAM, 0);
-    ret = sendto(sock, &ts, TCP_HEADER_SIZE + sizeof (struct sockaddr_in), 0, (struct sockaddr *) &tcpd, sizeof (tcpd));
-    if (ret < 0)
-    {
-        perror("error sending to TCPD process");
-        exit(1);
-    }
-    close(sock);
 
     return 0;
 }
 
-int UOTsend (int sockfd, const void * msg, int len, int flags){
-  char buf[TCP_SEGMENT_SIZE];
-  struct sockaddr_in tcpd;
-  struct hostent *hp, *gethostbyname();
-  int TCPD_len = sizeof(struct sockaddr_in);
-  int send_bytes = 0;
-  int ret = 0;
-  int i = 0;
-  char hostname[128] = "localhost";
-  int msg_offset = 1;
-  TCP_segment ts;
-  
-  tcpd.sin_family = AF_INET;
-  tcpd.sin_port = TCPD_PORT;
-  tcpd.sin_addr.s_addr = INADDR_ANY;  
-    
-  gethostname (hostname, sizeof(hostname));
-  hp = gethostbyname(hostname);
-  bcopy((void *)hp->h_addr_list[0], (void *)&tcpd.sin_addr, hp->h_length);
-  sockfd = socket (AF_INET, SOCK_DGRAM, 0);
-  while (len > 0){
-    int copy_len = (len > (TCP_MSS))? (TCP_MSS):len;
-    /* Initialize buffer to all zeroes */
-    bzero((void*)&ts, TCP_SEGMENT_SIZE);
-    ts.hdr.urp = LOCAL_SEGMENT;
-    ts.hdr.seq = 0;
-    memcpy((void *)&(ts.data), (void *)msg, copy_len);
-    ret = sendto (sockfd, &ts, copy_len + TCP_HEADER_SIZE, flags, (struct sockaddr *)&tcpd, sizeof(tcpd));
-    printf ("len=%d TCP_MSS=%d", len, TCP_MSS);
-    
-    if (ret < 0){
-      perror ("error sending to TCPD process");
-      exit(1);
-    }
-    len = len - copy_len;
-  }
-  close(sockfd);
-  
-  return send_bytes;
+int UOTsend(int sockfd, const void * msg, int len, int flags)
+{
+
+    return 0;
 }
 
 /* Bind custom TCP socket to specified address */
-int UOTbind (int sockfd, struct sockaddr *my_addr, int addrlen){
-  char buf[1017]; /* MSS = 1000 Remote address = 16 */
-  struct sockaddr_in tcpd;
-  struct hostent *hp, *gethostbyname();
-  int TCPD_len = sizeof(struct sockaddr_in);
-  int send_bytes = 0;
-  int ret = 0;
-  char hostname[128];
-  int msg_offset = 1;
-  int sock = 0;  
-  TCP_segment ts;
-  src.sin_family = my_addr->sa_family;
-  memcpy((void*)&(src.sin_port), (const void*)&(my_addr->sa_data), addrlen);
-  
-  src.sin_port = ntohs(src.sin_port);
-fprintf(stdout, "\n%d\n", src.sin_addr.s_addr);
-/*
-  printf("BIND() : SRC PORT = %d ADDR = %lu\n",src.sin_port, src.sin_addr.s_addr);  
-*/
-  
-  bzero((void*)&ts, TCP_SEGMENT_SIZE);
-  memcpy((void*)&ts.data, (void*)&src, sizeof (src));
-  ts.hdr.seq = SRC_INFO;
-  ts.hdr.urp = LOCAL_SEGMENT;
-  tcpd.sin_family = AF_INET;
-  tcpd.sin_port = TCPD_PORT;
-  tcpd.sin_addr.s_addr = src.sin_addr.s_addr;
-  
-  sock = socket (AF_INET, SOCK_DGRAM, 0);
-  ret = sendto (sock, &ts, TCP_HEADER_SIZE + sizeof (struct sockaddr_in), 0, (struct sockaddr *)&tcpd, sizeof(tcpd));
-  if (ret < 0){
-    perror ("error sending to TCPD process");
-    exit(1);
-  }
-  printf("BIND () : Sent src.. bytes = %d\n",ret);
-  close(sock);
+int UOTbind(int sockfd, struct sockaddr_in *my_addr, int addrlen)
+{
+    my_addr->sin_family = AF_INET;
+    my_addr->sin_port = htons(PORT);
+    my_addr->sin_addr.s_addr = htonl(INADDR_ANY);
 
-  return bind(sockfd, my_addr, addrlen);
+    if (bind(sockfd, (struct sockaddr *) my_addr, addrlen) < 0)
+    {
+        perror("bind");
+        return -1;
+    }
+    return sockfd;
 }
 
 /* Receive message on specified socket */
-int UOTrecv (int sockfd, void *buf, int len, int flags){
-  
-  struct sockaddr_in TCPD;
-  struct sockaddr_in tcpd;
-  int TCPD_len; 
-  int ret;
-  char b[1050];
-  sockfd = socket (AF_INET, SOCK_DGRAM, 0);
-  
-  tcpd.sin_family = AF_INET;
-  tcpd.sin_port = src.sin_port;
-  tcpd.sin_addr.s_addr = src.sin_addr.s_addr;  
-  
-  bind (sockfd, (struct sockaddr *)&tcpd, sizeof(struct sockaddr_in));
-  /* Receive data via TCPD process */
-  ret = recvfrom (sockfd, buf, TCP_MSS, flags, (struct sockaddr*)&TCPD, &TCPD_len);
-  if (ret < 0){
-    perror("error receiving data via TCPD process");
-    exit(1);
-  }
-  /*
-  printf("RECV() : ret = %d\n",ret); 
-  */
-  close(sockfd);
-  return ret;
+int UOTrecv(int sockfd, void *buf, int len, struct sockaddr_in * cliAddr,  int size)
+{
+        fprintf(stderr, "in recive\n");
+        size_t inbytes = len;
+        struct iovec iovrecv[2];
+
+        msgrecv.msg_name = NULL;
+        msgrecv.msg_namelen = 0;
+        msgrecv.msg_iov = iovrecv;
+        msgrecv.msg_iovlen = 2;
+        iovrecv[0].iov_base = &recvhdr;
+        iovrecv[0].iov_len = sizeof (struct hdr);
+        iovrecv[1].iov_base = buf;
+        iovrecv[1].iov_len = inbytes;
+
+        int n = 0;
+        n = recvmsg(sockfd, &msgrecv, 0);
+        fprintf(stderr, "recv %4d\n", recvhdr.seq);
 }
