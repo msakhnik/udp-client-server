@@ -8,3 +8,4 @@ client/.dep.inc
 client/lib
 server/.dep.inc
 server/lib
+server/server.h.gch

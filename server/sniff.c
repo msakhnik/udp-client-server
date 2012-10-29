@@ -1,22 +1,36 @@
 #include<pcap.h>
 #include<stdio.h>
-#include<stdlib.h> // for exit()
-#include<string.h> //for memset
+#include<stdlib.h>
+#include<string.h>
 
 #include<sys/socket.h>
-#include<arpa/inet.h> // for inet_ntoa()
+#include<arpa/inet.h>
 #include<net/ethernet.h>
-#include<netinet/ip_icmp.h>	//Provides declarations for icmp header
-#include<netinet/udp.h>	//Provides declarations for udp header
-#include<netinet/tcp.h>	//Provides declarations for tcp header
-#include<netinet/ip.h>	//Provides declarations for ip header
+#include<netinet/udp.h>	
+#include<netinet/ip.h>
 
-void print_udp_packet(const u_char *Buffer, int Size)
+struct sockaddr_in source, dest;
+struct udp_header
+{
+    int src_port;
+    int dest_port;
+    int udp_length;
+    int udp_checksum;
+};
+
+//recived packet
+static int packet_count = 0;
+
+//was resended
+static int resended_count = 0;
+
+//show UDP headers
+void _PrintUdpPacket(const u_char *buffer, int size)
 {
     unsigned short iphdrlen;
-    struct iphdr *iph = (struct iphdr *) (Buffer + sizeof (struct ethhdr));
+    struct iphdr *iph = (struct iphdr *) (buffer + sizeof (struct ethhdr));
     iphdrlen = iph->ihl * 4;
-    struct udphdr *udph = (struct udphdr*) (Buffer + iphdrlen + sizeof (struct ethhdr));
+    struct udphdr *udph = (struct udphdr*) (buffer + iphdrlen + sizeof (struct ethhdr));
     int header_size = sizeof (struct ethhdr) +iphdrlen + sizeof udph;
     fprintf(stderr, "\nUDP Header\n");
     fprintf(stderr, "   |-Source Port      : %d\n", ntohs(udph->source));
@@ -25,17 +39,95 @@ void print_udp_packet(const u_char *Buffer, int Size)
     fprintf(stderr, "   |-UDP Checksum     : %d\n", ntohs(udph->check));
     fprintf(stderr, "\n");
 }
+//show IP headers
+void _PrintIpHeader(const u_char * buffer, int Size)
+{
+    unsigned short iphdrlen;
+    struct iphdr *iph = (struct iphdr *) (buffer + sizeof (struct ethhdr));
+    iphdrlen = iph->ihl * 4;
+    memset(&source, 0, sizeof (source));
+    source.sin_addr.s_addr = iph->saddr;
 
-void another_callback(u_char *arg, const struct pcap_pkthdr* pkthdr,
+    memset(&dest, 0, sizeof (dest));
+    dest.sin_addr.s_addr = iph->daddr;
+
+    fprintf(stderr, "\n");
+    fprintf(stderr, "IP Header\n");
+    fprintf(stderr, "   |-IP Version        : %d\n", (unsigned int) iph->version);
+    fprintf(stderr, "   |-IP Header Length  : %d DWORDS or %d Bytes\n", (unsigned int) iph->ihl, ((unsigned int) (iph->ihl))*4);
+    fprintf(stderr, "   |-Type Of Service   : %d\n", (unsigned int) iph->tos);
+    fprintf(stderr, "   |-IP Total Length   : %d  Bytes(Size of Packet)\n", ntohs(iph->tot_len));
+    fprintf(stderr, "   |-Identification    : %d\n", ntohs(iph->id));
+    fprintf(stderr, "   |-TTL      : %d\n", (unsigned int) iph->ttl);
+    fprintf(stderr, "   |-Protocol : %d\n", (unsigned int) iph->protocol);
+    fprintf(stderr, "   |-Checksum : %d\n", ntohs(iph->check));
+    fprintf(stderr, "   |-Source IP        : %s\n", inet_ntoa(source.sin_addr));
+    fprintf(stderr, "   |-Destination IP   : %s\n", inet_ntoa(dest.sin_addr));
+}
+
+void _SetHeader(struct udp_header * packet, int dest, int src, int length, int check)
+{
+    packet->dest_port = dest;
+    packet->src_port = src;
+    packet->udp_length = length;
+    packet->udp_checksum = check;
+}
+
+int _HeaderEmpty(struct udp_header * packet)
+{
+    if (packet->dest_port == 0 &&
+         packet->udp_checksum == 0 &&
+         packet->udp_length == 0)
+        return 1;
+    else
+        return 0;
+            
+}
+// Check if packet was send and recive saccesfully
+void _ChekHeader(const u_char *buffer, int size, int count)
+{
+    static struct udp_header packet_recv = {0, 0, 0, 0}, packet_send = {0, 0, 0, 0};
+    unsigned short iphdrlen;
+    struct iphdr *iph = (struct iphdr *) (buffer + sizeof (struct ethhdr));
+    iphdrlen = iph->ihl * 4;
+    struct udphdr *udph = (struct udphdr*) (buffer + iphdrlen + sizeof (struct ethhdr));
+
+/*
+    fprintf(stderr, "recv%d\n", sizeof(packet_send));
+*/
+    if (_HeaderEmpty((struct udp_header *) &packet_recv))
+    {
+        _SetHeader((struct udp_header *)  &packet_recv, ntohs(udph->dest), ntohs(udph->source), ntohs(udph->len), ntohs(udph->check));
+        if (packet_recv.dest_port == packet_send.dest_port)
+            resended_count++;
+        memset(&packet_send, 0, sizeof(packet_send));
+        return;
+    }
+    _SetHeader((struct udp_header *)  &packet_send, ntohs(udph->dest), ntohs(udph->source), ntohs(udph->len), ntohs(udph->check));
+
+    if (packet_recv.dest_port == packet_send.src_port &&
+            packet_recv.udp_checksum == packet_send.udp_checksum &&
+            packet_recv.udp_length == packet_send.udp_length
+            )
+        packet_count++;
+    memset(&packet_recv, 0, sizeof(packet_recv));
+}
+
+// Callback function which work any time when recived packets
+void LoopCallback(u_char *arg, const struct pcap_pkthdr* pkthdr,
                       const u_char* packet)
 {
-    int i = 0;
     static int count = 0;
     int size = pkthdr->len;
-    print_udp_packet(packet, size);
+    
+    _PrintUdpPacket(packet, size);
+    _PrintIpHeader(packet, size);
 
-    printf("Packet Count: %d\n", ++count); /* Количество пакетов */
-    printf("Recieved Packet Size: %d\n", pkthdr->len); /* Длина заголовка */
+    printf("All packet Count: %d\n", ++count);
+    printf("Recieved Packet Size: %d\n", pkthdr->len);
+    printf("Success Packet Recieved---: %d\n", packet_count + 1);
+    printf("Resended Packet---: %d\n", resended_count);
+    _ChekHeader(packet, size, count);
 }
 
 int main(int argc, char **argv)
@@ -44,9 +136,6 @@ int main(int argc, char **argv)
     char *dev;
     char errbuf[PCAP_ERRBUF_SIZE];
     pcap_t* descr;
-    const u_char *packet;
-    struct pcap_pkthdr hdr;
-    struct ether_header *eptr;
     struct bpf_program fp;
     bpf_u_int32 maskp;
     bpf_u_int32 netp;
@@ -89,6 +178,6 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    pcap_loop(descr, -1, another_callback, NULL);
+    pcap_loop(descr, -1, LoopCallback, NULL);
     return 0;
 }
