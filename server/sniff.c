@@ -8,6 +8,22 @@
 #include<net/ethernet.h>
 #include<netinet/udp.h>	
 #include<netinet/ip.h>
+#include <getopt.h>
+
+static void _ReadHelp(const char *progname)
+{
+    printf( "ASF video player\n\n"
+            "Synopsis:\n"
+            "  %s [options]\n\n"
+            "Options:\n"
+            "  -u,--udp\tShow udp header info\n"
+            "  -i,--ip\tShow ip header info\n"
+            "  -l,--log\tsave in log file\n"
+            "  -h,--help\tThis help message\n\n"
+            , progname)
+         ;
+}
+
 
 struct sockaddr_in source, dest;
 struct udp_header
@@ -17,6 +33,10 @@ struct udp_header
     int udp_length;
     int udp_checksum;
 };
+
+int show_udp = 0;
+int show_ip = 0;
+int save_log = 0;
 
 //recived packet
 static int packet_count = 0;
@@ -120,8 +140,10 @@ void LoopCallback(u_char *arg, const struct pcap_pkthdr* pkthdr,
     static int count = 0;
     int size = pkthdr->len;
     
-    _PrintUdpPacket(packet, size);
-    _PrintIpHeader(packet, size);
+    if (show_udp)
+        _PrintUdpPacket(packet, size);
+    if (show_ip)
+        _PrintIpHeader(packet, size);
 
     printf("All packet Count: %d\n", ++count);
     printf("Recieved Packet Size: %d\n", pkthdr->len);
@@ -140,12 +162,50 @@ int main(int argc, char **argv)
     bpf_u_int32 maskp;
     bpf_u_int32 netp;
 
-    if (argc != 2)
-    {
-        fprintf(stdout, "Usage: %s \"expression\"\n"
-                , argv[0]);
-        return 0;
-    }
+
+    char const* progname = argv[0];
+    while (1)
+        {
+            static struct option long_options[] =
+            {
+                { "udp",          no_argument, 0, 'u' },
+                { "ip",        no_argument, 0, 'i' },
+                { "log",        no_argument,  0, 'l' },                
+                { "help",           no_argument, 0, 'h' },
+                { 0, 0, 0, 0 }
+            };
+
+            int c = 0;
+            int option_index = 0;
+
+            c = getopt_long(argc, argv, "uilh",
+                            long_options, &option_index);
+            if (c == -1)
+                break;
+
+            switch (c)
+            {
+            case 'h':
+                _ReadHelp(progname);
+                return 0;
+
+            case 'u':
+                show_udp = 1;
+                break;
+
+            case 'i':
+                show_ip = 1;
+                break;
+
+            case 'l':
+                save_log = 1;
+                break;
+
+            default:
+                perror("Unknown option '");
+                return 1;
+            }
+        }
     /*
         dev = pcap_lookupdev(errbuf); 
      */
@@ -166,7 +226,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    if (pcap_compile(descr, &fp, argv[1], 0, netp) == -1)
+    if (pcap_compile(descr, &fp, "udp", 0, netp) == -1)
     {
         fprintf(stderr, "Error calling pcap_compile\n");
         exit(1);
