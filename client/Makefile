@@ -1,8 +1,8 @@
 CC=gcc
 CFLAGS=-g
-DEPS = client.h lib/udpOverTcp.h
+DEPS = client.h
 NAME = client
-OBJ = client.o main.o lib/udpOverTcp.o
+OBJ = client.o main.o
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)

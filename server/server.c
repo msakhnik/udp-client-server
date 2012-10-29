@@ -109,6 +109,7 @@ static struct hdr
     uint32_t ts;
 } recvhdr, sendhdr;
 
+
 int CreateConnection(SAI* ptr_addr, size_t size)
 {
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
@@ -143,6 +144,8 @@ int _RecvFrom(int sock, char* line, SA * cliAddr, int size)
     return recvfrom(sock, line, MAXLINE, 0,
                      (struct sockaddr *) cliAddr, &size);
 }
+
+
 
 
 void RunEcho(int sock, size_t size)
