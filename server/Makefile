@@ -3,9 +3,9 @@ NAME=server sniff
 CC=gcc
 CFLAGS=-g  -lpcap
 server: server.o
-	gcc -o server server.o main.o -g
+	gcc -o server server.o main.o ipwrapper.o -g
 server.o: server.c server.h
-	gcc -c  server.h server.c main.c
+	gcc -c  server.h server.c main.c ipwrapper.h ipwrapper.c
 sniff: sniff.o
 	gcc -o sniff sniff.o -lpcap
 sniff.o: sniff.c
